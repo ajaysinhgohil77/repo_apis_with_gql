@@ -1,0 +1,31 @@
+{
+  "name": "repo_apis",
+  "version": "1.0.0",
+  "description": "github repo apis",
+  "main": "apollo-server.js",
+  "dependencies": {
+    "apollo-datasource-rest": "^3.7.0",
+    "apollo-server": "^3.12.1",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "graphql": "^16.8.1"
+  },
+  "scripts": {
+    "dev": "node apollo-server.js dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ajaysinhgohil77/repo_apis_with_gql.git"
+  },
+  "keywords": [
+    "gql",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ajaysinhgohil77/repo_apis_with_gql/issues"
+  },
+  "homepage": "https://github.com/ajaysinhgohil77/repo_apis_with_gql#readme"
+}

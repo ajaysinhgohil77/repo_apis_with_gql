@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repo APIs GraphQL Client</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h1>GitHub Repositories</h1>
+    <div id="repoList"></div>
+
+    <hr />
+    <hr />
+
+    <h1>Repository Content</h1>
+    <div id="repoContent"></div>
+
+    <script>
+        async function getRepositories() {
+            const listRepoQuery =
+                JSON.stringify({
+                    query: `query {
+                                listRepos
+                                {
+                                    name,
+                                    size,
+                                    owner {
+                                        login
+                                    }
+                                }
+                            }`,
+                    variables: {}
+                })
+
+            const url = 'http://127.0.0.1:4334/';
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: listRepoQuery
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const { data } = await response.json();
+
+                data.listRepos.forEach((repo) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'repo-item';
+                    listItem.textContent = ` * ${repo.name}`;
+                    listItem.addEventListener('click', () => showRepoContent(repo.name));
+                    repoList.appendChild(listItem);
+                });
+
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+
+        async function showRepoContent(repoName) {
+            const repoContentTemp = document.getElementById('repoContent')
+            while (repoContentTemp && repoContentTemp.firstChild) {
+                repoContentTemp.removeChild(repoContentTemp.firstChild);
+            }
+
+            const filesLimit = 15;
+
+            const getRepoQuery =
+                JSON.stringify({
+                    query: ` query {
+                                getRepoByName(repoName: "${repoName}", filesLimit: ${filesLimit})
+                                {
+                                    name,
+                                    size,
+                                    owner {
+                                        login
+                                    },
+                                    private,
+                                    noOfFiles,
+                                    firstYMLFileContent,
+                                    webhooks
+                                }
+                            }
+                    `,
+                    variables: {}
+                })
+
+            const url = 'http://127.0.0.1:4334/';
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: getRepoQuery
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const { data } = await response.json();
+                const repoDetails = data.getRepoByName;
+
+                for (const key in repoDetails) {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'repo-item';
+                    if (key === 'owner') {
+                        listItem.textContent = ` - ${key} :  ${repoDetails[key].login}`;
+                    } else {
+                        listItem.textContent = ` - ${key} :  ${repoDetails[key]}`;
+                    }
+                    repoContent.appendChild(listItem);
+                }
+
+            } catch (e) {
+                console.error('Error:', e);
+            }
+
+
+        }
+
+        // initial load
+        getRepositories();
+
+    </script>
+</body>
+
+</html>
