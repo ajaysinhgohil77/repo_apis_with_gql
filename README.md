@@ -29,8 +29,8 @@ Start the development server
 
 ## To test these APIs from client
 
-1. Run dev server first as given above
+1. Run dev server first with `npm run dev`
 
-2. Go to `client` folder and open `index.html` file in browser 
+2. Go to `localhost:4334/index.html` in browser 
 
 3. To see content of any GitHub Repo, Click on anyone of the listed Repos and wait till it loads content below

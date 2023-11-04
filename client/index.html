@@ -9,20 +9,34 @@
 </head>
 
 <body>
-    <h1>GitHub Repositories</h1>
+    <h3>GitHub Repositories</h3>
+
+    <h4>Click on repo name to get repo details</h4>
+
     <div id="repoList"></div>
 
     <hr />
+
+    <button onclick="getAllFilesCount()" style="cursor: pointer;">Get All Files Count</button>
+
     <hr />
 
-    <h1>Repository Content</h1>
-    <div id="repoContent"></div>
+    <h2 id="loader1" style="visibility: hidden; padding: 0.5rem; cursor: progress;"> Loading... (may take sometime to
+        load) </h2>
 
-    <script>
-        async function getRepositories() {
-            const listRepoQuery =
-                JSON.stringify({
-                    query: `query {
+    <h3>Repository Content</h3>
+
+    <div id="allFileCountsLabel" style="visibility: hidden; padding: 0.5rem;"></div>
+
+    <div id="repoContent">
+        <script>
+
+            let repoNameTemp = 'repoA';
+
+            async function getRepositories() {
+                const listRepoQuery =
+                    JSON.stringify({
+                        query: `query {
                                 listRepos
                                 {
                                     name,
@@ -32,46 +46,54 @@
                                     }
                                 }
                             }`,
-                    variables: {}
-                })
+                        variables: {}
+                    })
 
-            const url = 'http://127.0.0.1:4334/';
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: listRepoQuery
+                const url = 'http://127.0.0.1:4334/graphql';
+                const options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: listRepoQuery
+                }
+
+                try {
+                    const response = await fetch(url, options);
+                    const { data } = await response.json();
+
+                    data.listRepos.forEach((repo) => {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'repo-item';
+                        listItem.textContent = ` * ${repo.name}`;
+                        listItem.style.cursor = 'pointer';
+                        listItem.addEventListener('click', () => showRepoContent(repo.name));
+                        repoList.appendChild(listItem);
+                    });
+
+                } catch (e) {
+                    console.error('Error:', e);
+                }
             }
 
-            try {
-                const response = await fetch(url, options);
-                const { data } = await response.json();
+            async function showRepoContent(repoName) {
+                repoNameTemp = repoName;
+                const loaderElement = document.getElementById('loader1')
+                loaderElement.style.visibility = 'visible';
 
-                data.listRepos.forEach((repo) => {
-                    const listItem = document.createElement('div');
-                    listItem.className = 'repo-item';
-                    listItem.textContent = ` * ${repo.name}`;
-                    listItem.addEventListener('click', () => showRepoContent(repo.name));
-                    repoList.appendChild(listItem);
-                });
+                const allFileCountsLabel = document.getElementById('allFileCountsLabel');
+                allFileCountsLabel.style.visibility = 'hidden'
 
-            } catch (e) {
-                console.error('Error:', e);
-            }
-        }
+                const repoContentTemp = document.getElementById('repoContent')
+                while (repoContentTemp && repoContentTemp.firstChild) {
+                    repoContentTemp.removeChild(repoContentTemp.firstChild);
+                }
 
-        async function showRepoContent(repoName) {
-            const repoContentTemp = document.getElementById('repoContent')
-            while (repoContentTemp && repoContentTemp.firstChild) {
-                repoContentTemp.removeChild(repoContentTemp.firstChild);
-            }
+                const filesLimit = 15;
 
-            const filesLimit = 15;
-
-            const getRepoQuery =
-                JSON.stringify({
-                    query: ` query {
+                const getRepoQuery =
+                    JSON.stringify({
+                        query: ` query {
                                 getRepoByName(repoName: "${repoName}", filesLimit: ${filesLimit})
                                 {
                                     name,
@@ -86,45 +108,95 @@
                                 }
                             }
                     `,
-                    variables: {}
-                })
+                        variables: {}
+                    })
 
-            const url = 'http://127.0.0.1:4334/';
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: getRepoQuery
-            }
-
-            try {
-                const response = await fetch(url, options);
-                const { data } = await response.json();
-                const repoDetails = data.getRepoByName;
-
-                for (const key in repoDetails) {
-                    const listItem = document.createElement('div');
-                    listItem.className = 'repo-item';
-                    if (key === 'owner') {
-                        listItem.textContent = ` - ${key} :  ${repoDetails[key].login}`;
-                    } else {
-                        listItem.textContent = ` - ${key} :  ${repoDetails[key]}`;
-                    }
-                    repoContent.appendChild(listItem);
+                const url = 'http://127.0.0.1:4334/graphql';
+                const options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: getRepoQuery
                 }
 
-            } catch (e) {
-                console.error('Error:', e);
+                try {
+                    const response = await fetch(url, options);
+                    const { data } = await response.json();
+                    const repoDetails = data.getRepoByName;
+
+                    const loaderElement = document.getElementById('loader1')
+                    loaderElement.style.visibility = 'hidden';
+
+                    for (const key in repoDetails) {
+                        const listItem = document.createElement('div');
+                        listItem.className = 'repo-item';
+                        if (key === 'owner') {
+                            listItem.textContent = ` - ${key} :  ${repoDetails[key].login}`;
+                        } else if (key === 'noOfFiles') {
+                            listItem.textContent = ` - ${key} :  ${repoDetails[key]}  (To get all files count, click on 'Get All Files Count' Button)`;
+                        }
+                        else {
+                            listItem.textContent = ` - ${key} :  ${repoDetails[key]}`;
+                        }
+                        repoContent.appendChild(listItem);
+                    }
+                } catch (e) {
+                    console.error('Error:', e);
+                }
             }
 
 
-        }
+            async function getAllFilesCount() {
+                const allFileCountsLabel = document.getElementById('allFileCountsLabel');
+                allFileCountsLabel.style.visibility = 'hidden'
 
-        // initial load
-        getRepositories();
+                const loaderElement = document.getElementById('loader1')
+                loaderElement.style.visibility = 'visible';
 
-    </script>
+                const getRepoQuery =
+                    JSON.stringify({
+                        query: ` query {
+                                getRepoByName(repoName: "${repoNameTemp}")
+                                {
+                                    noOfFiles
+                                }
+                            }
+                    `,
+                        variables: {}
+                    })
+
+                const url = 'http://127.0.0.1:4334/graphql';
+                const options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: getRepoQuery
+                }
+
+                try {
+                    const response = await fetch(url, options);
+                    const { data } = await response.json();
+                    const allFileCnt = data.getRepoByName.noOfFiles;
+
+                    const allFileCountsLabel = document.getElementById('allFileCountsLabel');
+                    allFileCountsLabel.innerText = `Total Files in "${repoNameTemp}" Repo : ` + allFileCnt;
+                    allFileCountsLabel.style.visibility = 'visible';
+                    allFileCountsLabel.style.fontWeight = 'bold'
+
+                    loaderElement.style.visibility = 'hidden';
+
+                } catch (e) {
+                    console.error('Error:', e);
+                }
+
+            }
+
+            // initial load
+            getRepositories();
+
+        </script>
 </body>
 
 </html>

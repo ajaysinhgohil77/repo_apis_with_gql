@@ -42,6 +42,9 @@ class GithubAPIResource extends RESTDataSource {
 
     async getContentOfDirectory({ repoName, dir }) {
         try {
+            if (!repoName || !dir) {
+                return []
+            }
             const response = await this.get(`/repos/${OWNER}/${repoName}/contents/${dir}`, undefined, { headers });
             return response;
         } catch (e) {

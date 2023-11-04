@@ -7,23 +7,40 @@ const setYMLFilePath = (item) => {
 }
 
 const getFileCountOfDirectory = async ({ repoName, dir, dataSources }) => {
-    let noOfFiles = 0;
-    const content = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir })
-    for (const item of content) {
-        if (item.type === 'file') {
-            noOfFiles++
-            setYMLFilePath(item)
-        } else if (item.type === 'dir') {
-            noOfFiles += await getFileCountOfDirectory({ repoName, dir: item.path, dataSources })
-        }
-    }
-    // perf can be improved with Promise.all or Promise.allSettled
+    try {
+        const content = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir });
 
-    return noOfFiles
-}
+        if (content && Array.isArray(content) && content.length) {
+            // creating promises for parallel requests
+            const subDirPromises = content
+                .filter(item => item.type === 'dir')
+                .map(item => getFileCountOfDirectory({ repoName, dir: item.path, dataSources }));
+
+            const subDirCounts = await Promise.all(subDirPromises);
+
+            const noOfFiles = content.filter(item => {
+                if (item.type === 'file') {
+                    setYMLFilePath(item)
+                    return true
+                }
+            }).length;
+
+            const subDirFileCounts = subDirCounts.reduce((acc, count) => acc + count, 0);
+
+            return noOfFiles + subDirFileCounts;
+        } else {
+            return 0
+        }
+    } catch (e) {
+        console.log(e);
+    }
+};
+
 const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
 
-    // console.time('perf')
+    // logger for perf measurement
+    console.time('perf')
+
     let repo = await dataSources.githubAPIResource.getRepoByName({ repoName })
     if (!repo) {
         return;
@@ -51,15 +68,20 @@ const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
         if (filesLimit && noOfFiles >= filesLimit) break;
     }
 
-    const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir: firstOccuredYMLFilePath })
+    repo = { ...repo, noOfFiles }
 
-    const firstYMLFileContent = Buffer.from(content, 'base64').toString('utf8')
+    if (firstOccuredYMLFilePath) {
+        const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir: firstOccuredYMLFilePath })
+        const firstYMLFileContent = Buffer.from(content, 'base64').toString('utf8')
+        repo['firstYMLFileContent'] = firstYMLFileContent;
+    } else {
+        repo['firstYMLFileContent'] = '';
+    }
+    repo['webhooks'] = webhooks;
 
-    repo = { ...repo, noOfFiles, firstYMLFileContent, webhooks }
+    console.timeEnd('perf')
 
-    // console.timeEnd('perf')
-
-    return repo
+    return repo;
 }
 
 const listRepos = async (_, { }, { dataSources }) => {
