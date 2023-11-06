@@ -1,3 +1,7 @@
+
+// for pagination
+const PER_PAGE = 30; // Default and Recommnded by github REST API Documentation
+
 let firstOccuredYMLFilePath;
 
 const setYMLFilePath = (item) => {
@@ -6,15 +10,15 @@ const setYMLFilePath = (item) => {
     }
 }
 
-const getFileCountOfDirectory = async ({ repoName, dir, dataSources }) => {
+const getFileCountOfDirectory = async ({ owner, token, repoName, dir, dataSources }) => {
     try {
-        const content = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir });
+        const content = await dataSources.githubAPIResource.getContentOfDirectory({ owner, token, repoName, dir });
 
         if (content && Array.isArray(content) && content.length) {
             // creating promises for parallel requests
             const subDirPromises = content
                 .filter(item => item.type === 'dir')
-                .map(item => getFileCountOfDirectory({ repoName, dir: item.path, dataSources }));
+                .map(item => getFileCountOfDirectory({ owner, token, repoName, dir: item.path, dataSources }));
 
             const subDirCounts = await Promise.all(subDirPromises);
 
@@ -36,21 +40,19 @@ const getFileCountOfDirectory = async ({ repoName, dir, dataSources }) => {
     }
 };
 
-const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
-
-
+const getRepoByName = async (_, { owner, token, repoName, filesLimit }, { dataSources }) => {
     try {
         // logger for perf measurement
         console.time('perf')
 
-        let repo = await dataSources.githubAPIResource.getRepoByName({ repoName })
+        let repo = await dataSources.githubAPIResource.getRepoByName({ owner, token, repoName })
         if (!repo) {
             return;
         }
 
         const results = await Promise.all([
-            dataSources.githubAPIResource.getContentOfRepo({ repoName }),
-            dataSources.githubAPIResource.getWebhooksOfRepo({ repoName })
+            dataSources.githubAPIResource.getContentOfRepo({ owner, token, repoName }),
+            dataSources.githubAPIResource.getWebhooksOfRepo({ owner, token, repoName })
         ])
 
         const contentOfRepo = results && results[0] ? results[0] : []
@@ -65,7 +67,7 @@ const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
                 if (item.type === 'file') {
                     noOfFiles++
                 } else if (item.type === 'dir') {
-                    const noOfFilesInDir = await getFileCountOfDirectory({ repoName, dir: item.path, dataSources });
+                    const noOfFilesInDir = await getFileCountOfDirectory({ owner, token, repoName, dir: item.path, dataSources });
                     noOfFiles += noOfFilesInDir;
                 }
                 if (filesLimit && noOfFiles >= filesLimit) break;
@@ -75,7 +77,7 @@ const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
         repo = { ...repo, noOfFiles }
 
         if (firstOccuredYMLFilePath) {
-            const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir: firstOccuredYMLFilePath })
+            const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ owner, token, repoName, dir: firstOccuredYMLFilePath })
             const firstYMLFileContent = Buffer.from(content, 'base64').toString('utf8')
             repo['firstYMLFileContent'] = firstYMLFileContent;
         } else {
@@ -93,10 +95,37 @@ const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
 
 }
 
-const listRepos = async (_, { }, { dataSources }) => {
+const listRepos = async (_, { token, repoNames }, { dataSources }) => {
     try {
-        const repos = (await dataSources.githubAPIResource.listRepos())
-            .filter(repo => ["repoA", "repoB", "repoC"].includes(repo.name));
+        let page = 1;
+        let repos = await dataSources.githubAPIResource.listRepos({ token, page });
+        if (repoNames?.length) {
+            const filteredRepos = [];
+            for (const incomingRepoName of repoNames) {
+                const existingRepo = repos.find(repo => repo?.name.trim().toLowerCase() === incomingRepoName.trim().toLowerCase())
+                if (existingRepo) {
+                    filteredRepos.push(existingRepo)
+                }
+            }
+
+            // pagination
+            let noOfReposOnCurrentPage = repos.length;
+            while (noOfReposOnCurrentPage === PER_PAGE) {
+                if (repoNames.length === filteredRepos.length) {
+                    break;
+                }
+                page++;
+                let nextPageRepos = await dataSources.githubAPIResource.listRepos({ token, page });
+                for (const incomingRepoName of repoNames) {
+                    const existingRepo = nextPageRepos.find(repo => repo.name.toLowerCase() === incomingRepoName.toLowerCase())
+                    if (existingRepo) {
+                        filteredRepos.push(existingRepo)
+                    }
+                }
+                noOfReposOnCurrentPage = nextPageRepos.length;
+            }
+            return filteredRepos
+        }
         return repos
     } catch (e) {
         throw e;

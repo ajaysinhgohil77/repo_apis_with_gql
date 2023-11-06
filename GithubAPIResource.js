@@ -1,9 +1,3 @@
-
-const TOKEN = process.env.token;
-const OWNER = process.env.owner;
-
-const headers = { Authorization: `token ${TOKEN}` }
-
 // creating rest resource to call external API 
 const { RESTDataSource } = require('apollo-datasource-rest');
 
@@ -13,53 +7,68 @@ class GithubAPIResource extends RESTDataSource {
         this.baseURL = 'https://api.github.com/';
     }
 
-    async listRepos() {
+    async listRepos({ token, page }) {
         try {
-            const response = await this.get('/user/repos', undefined, { headers });
-            return response;
+            return await this.get(`/user/repos?page=${page}&per_page=30`, undefined, {
+                headers: {
+                    Authorization: `token ${token}`
+                }
+            });
         } catch (e) {
             console.error("Error in listRepos API Call =>", e.message);
             throw e;
         }
     }
 
-    async getRepoByName({ repoName }) {
+    async getRepoByName({ owner, token, repoName }) {
         try {
-            const response = await this.get(`/repos/${OWNER}/${repoName}`, undefined, { headers });
-            return response;
+            return await this.get(`/repos/${owner}/${repoName}`, undefined, {
+                headers: {
+                    Authorization: `token ${token}`
+                }
+            });
         } catch (e) {
             console.error("Error in getRepoByName API Call =>", e.message);
             throw e;
         }
     }
 
-    async getContentOfRepo({ repoName }) {
+    async getContentOfRepo({ owner, token, repoName }) {
         try {
-            const response = await this.get(`/repos/${OWNER}/${repoName}/contents`, undefined, { headers });
-            return response;
+            return await this.get(`/repos/${owner}/${repoName}/contents`, undefined, {
+                headers: {
+                    Authorization: `token ${token}`
+                }
+            });;
         } catch (e) {
             console.error("Error in getContentOfRepo API Call =>", e.message);
             throw e;
         }
     }
 
-    async getContentOfDirectory({ repoName, dir }) {
+    async getContentOfDirectory({ owner, token, repoName, dir }) {
         try {
             if (!repoName || !dir) {
                 return []
             }
-            const response = await this.get(`/repos/${OWNER}/${repoName}/contents/${dir}`, undefined, { headers });
-            return response;
+            return await this.get(`/repos/${owner}/${repoName}/contents/${dir}`, undefined, {
+                headers: {
+                    Authorization: `token ${token}`
+                }
+            });;
         } catch (e) {
             console.error("Error in getContentOfDirectory API Call =>", e.message);
             throw e;
         }
     }
 
-    async getWebhooksOfRepo({ repoName }) {
+    async getWebhooksOfRepo({ owner, token, repoName }) {
         try {
-            const response = await this.get(`/repos/${OWNER}/${repoName}/hooks`, undefined, { headers });
-            return response;
+            return await this.get(`/repos/${owner}/${repoName}/hooks`, undefined, {
+                headers: {
+                    Authorization: `token ${token}`
+                }
+            });;
         } catch (e) {
             console.error("Error in getContentOfRepo API Call =>", e.message);
             throw e;

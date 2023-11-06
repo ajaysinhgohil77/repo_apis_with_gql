@@ -14,12 +14,7 @@ Install dependencies
   npm install
 ```
 
-Create .env file in the root directory and put Owner and Github Personal Access Token in ENV file as given below
-
-```bash
-  owner=<YOUR OWNER NAME>
-  token=<YOUR ACCESS TOKEN>
-```
+No Need for .env file, owner and token will be accepted as input to GraphQL API or client's inputbox
 
 Start the development server
 
@@ -31,6 +26,8 @@ Start the development server
 
 1. Run dev server first with `npm run dev`
 
-2. Go to `localhost:4334/index.html` in browser 
+2. Go to `localhost:4334/index.html` in browser
+
+3. Provide owner, token, Repo Names for Listing (if no repo names are provided, it will list all the repos)
 
 3. To see content of any GitHub Repo, Click on anyone of the listed Repos and wait till it loads content below

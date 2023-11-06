@@ -11,13 +11,24 @@
 <body>
     <h3>GitHub Repositories</h3>
 
+    Owner: <input type="text" id="owner" />
+    <div />
+    Token: <input type="text" id="token" />
+    <div />
+    Provide Repo Names in Comma Separated Format
+    <div />
+    <textarea id="txtAreaRepoNames"></textarea>
+    <div />
+    <button onclick="getRepoList()"> Get Repo List As Entered Above</button>
+
     <h3>Click on repo name to get repo details</h3>
 
     <div id="repoList"></div>
 
     <hr />
 
-    <button onclick="getAllFilesCount()" style="cursor: pointer;">Get All Files Count Of Selected Repo</button>
+    <button id="getAllFilesCountBtn" onclick="getAllFilesCount()" style="cursor: pointer;">Get All Files Count Of
+        Selected Repo</button>
 
     <hr />
 
@@ -30,14 +41,39 @@
 
     <div id="repoContent">
         <script>
+            const getAllFilesCountBtnEle = document.getElementById('getAllFilesCountBtn');
+            getAllFilesCountBtnEle.style.visibility = 'hidden'
 
-            let repoNameTemp = 'repoA';
+            async function getRepoList() {
 
-            async function getRepositories() {
-                const listRepoQuery =
-                    JSON.stringify({
-                        query: `query {
-                                listRepos
+                const repoListTemp = document.getElementById('repoList')
+                while (repoListTemp && repoListTemp.firstChild) {
+                    repoListTemp.removeChild(repoListTemp.firstChild);
+                }
+
+                const owner = document.getElementById('owner').value.trim();
+                const token = document.getElementById('token').value.trim();
+
+                if (!owner) {
+                    alert('please provide owner')
+                    return;
+                }
+
+                if (!token) {
+                    alert('please provide token')
+                    return;
+                }
+
+                let repoNames = document.getElementById('txtAreaRepoNames').value.trim();
+
+                if (repoNames.length) {
+                    repoNames = repoNames.split(',').map(repo => `"${repo}"`)
+                }
+
+                const listQueryString = `listRepos(token: "${token}" ${repoNames.length ? `, repoNames:[${repoNames}]` : ``})`
+                const listRepoQuery = JSON.stringify({
+                    query: `query {
+                                ${listQueryString}
                                 {
                                     name,
                                     size,
@@ -46,8 +82,8 @@
                                     }
                                 }
                             }`,
-                        variables: {}
-                    })
+                    variables: {}
+                })
 
                 const url = 'http://127.0.0.1:4334/graphql';
                 const options = {
@@ -76,13 +112,33 @@
                 }
             }
 
+
+            let repoNameTemp = 'repoA';
+
             async function showRepoContent(repoName) {
+
+                const owner = document.getElementById('owner').value.trim();
+                const token = document.getElementById('token').value.trim();
+
+                if (!owner) {
+                    alert('please provide owner')
+                    return;
+                }
+
+                if (!token) {
+                    alert('please provide token')
+                    return;
+                }
+
                 repoNameTemp = repoName;
                 const loaderElement = document.getElementById('loader1')
                 loaderElement.style.visibility = 'visible';
 
                 const allFileCountsLabel = document.getElementById('allFileCountsLabel');
                 allFileCountsLabel.style.visibility = 'hidden'
+
+                const getAllFilesCountBtnEle = document.getElementById('getAllFilesCountBtn');
+                getAllFilesCountBtnEle.style.visibility = 'visible'
 
                 const repoContentTemp = document.getElementById('repoContent')
                 while (repoContentTemp && repoContentTemp.firstChild) {
@@ -94,7 +150,7 @@
                 const getRepoQuery =
                     JSON.stringify({
                         query: ` query {
-                                getRepoByName(repoName: "${repoName}", filesLimit: ${filesLimit})
+                                getRepoByName(owner: "${owner}", token: "${token}", repoName: "${repoName}", filesLimit: ${filesLimit})
                                 {
                                     name,
                                     size,
@@ -148,6 +204,19 @@
 
 
             async function getAllFilesCount() {
+                const owner = document.getElementById('owner').value.trim();
+                const token = document.getElementById('token').value.trim();
+
+                if (!owner) {
+                    alert('please provide owner')
+                    return;
+                }
+
+                if (!token) {
+                    alert('please provide token')
+                    return;
+                }
+
                 const allFileCountsLabel = document.getElementById('allFileCountsLabel');
                 allFileCountsLabel.style.visibility = 'hidden'
 
@@ -157,7 +226,7 @@
                 const getRepoQuery =
                     JSON.stringify({
                         query: ` query {
-                                getRepoByName(repoName: "${repoNameTemp}")
+                                getRepoByName(owner: "${owner}", token: "${token}", repoName: "${repoNameTemp}")
                                 {
                                     noOfFiles
                                 }
@@ -192,10 +261,6 @@
                 }
 
             }
-
-            // initial load
-            getRepositories();
-
         </script>
 </body>
 

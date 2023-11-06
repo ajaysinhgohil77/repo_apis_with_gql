@@ -22,8 +22,8 @@ const types = `
 
 const query = `
     type Query {
-        listRepos: [Repo]
-        getRepoByName(repoName: String, filesLimit: Int): Repo
+        listRepos(token: String!, repoNames: [String]): [Repo]
+        getRepoByName(owner: String!, token: String!, repoName: String, filesLimit: Int): Repo
     }
     `
 
