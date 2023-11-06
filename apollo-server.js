@@ -2,12 +2,6 @@
 
     // global error handler
     try {
-        if (process.argv[2] === 'dev') {
-            require('dotenv').config()
-        }
-        //  else {
-        //     // get secrets from cloud sercret manager
-        // }
 
         const port = process.env.PORT || 4334
 
