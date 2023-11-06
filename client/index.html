@@ -4,27 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repo APIs GraphQL Client</title>
+    <title>Client for GitHub Repo APIs</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <h3>GitHub Repositories</h3>
 
-    <h4>Click on repo name to get repo details</h4>
+    <h3>Click on repo name to get repo details</h3>
 
     <div id="repoList"></div>
 
     <hr />
 
-    <button onclick="getAllFilesCount()" style="cursor: pointer;">Get All Files Count</button>
+    <button onclick="getAllFilesCount()" style="cursor: pointer;">Get All Files Count Of Selected Repo</button>
 
     <hr />
 
     <h2 id="loader1" style="visibility: hidden; padding: 0.5rem; cursor: progress;"> Loading... (may take sometime to
         load) </h2>
 
-    <h3>Repository Content</h3>
+    <h3>Above Selected Repository Content</h3>
 
     <div id="allFileCountsLabel" style="visibility: hidden; padding: 0.5rem;"></div>
 
@@ -134,7 +134,7 @@
                         if (key === 'owner') {
                             listItem.textContent = ` - ${key} :  ${repoDetails[key].login}`;
                         } else if (key === 'noOfFiles') {
-                            listItem.textContent = ` - ${key} :  ${repoDetails[key]}  (To get all files count, click on 'Get All Files Count' Button)`;
+                            listItem.textContent = ` - ${key} :  ${repoDetails[key]}  (To get all files count, click on 'Get All Files Count Of Selected Repo' Button)`;
                         }
                         else {
                             listItem.textContent = ` - ${key} :  ${repoDetails[key]}`;

@@ -32,62 +32,75 @@ const getFileCountOfDirectory = async ({ repoName, dir, dataSources }) => {
             return 0
         }
     } catch (e) {
-        console.log(e);
+        throw e;
     }
 };
 
 const getRepoByName = async (_, { repoName, filesLimit }, { dataSources }) => {
 
-    // logger for perf measurement
-    console.time('perf')
 
-    let repo = await dataSources.githubAPIResource.getRepoByName({ repoName })
-    if (!repo) {
-        return;
-    }
+    try {
+        // logger for perf measurement
+        console.time('perf')
 
-    const results = await Promise.all([
-        dataSources.githubAPIResource.getContentOfRepo({ repoName }),
-        dataSources.githubAPIResource.getWebhooksOfRepo({ repoName })
-    ])
-
-    const contentOfRepo = results[0]
-    const webhooks = results[1]
-
-    let noOfFiles = 0;
-    for (const item of contentOfRepo) {
-        if (item.path.includes('node_modules') || item.path.includes('12213213')) {
-            continue;
+        let repo = await dataSources.githubAPIResource.getRepoByName({ repoName })
+        if (!repo) {
+            return;
         }
-        if (item.type === 'file') {
-            noOfFiles++
-        } else if (item.type === 'dir') {
-            const noOfFilesInDir = await getFileCountOfDirectory({ repoName, dir: item.path, dataSources });
-            noOfFiles += noOfFilesInDir;
+
+        const results = await Promise.all([
+            dataSources.githubAPIResource.getContentOfRepo({ repoName }),
+            dataSources.githubAPIResource.getWebhooksOfRepo({ repoName })
+        ])
+
+        const contentOfRepo = results && results[0] ? results[0] : []
+        const webhooks = results && results[1] ? results[1] : []
+
+        let noOfFiles = 0;
+        for (const item of contentOfRepo) {
+            if (item) {
+                if (item.path && (item.path.includes('node_modules') || item.path.includes('12213213'))) {
+                    continue;
+                }
+                if (item.type === 'file') {
+                    noOfFiles++
+                } else if (item.type === 'dir') {
+                    const noOfFilesInDir = await getFileCountOfDirectory({ repoName, dir: item.path, dataSources });
+                    noOfFiles += noOfFilesInDir;
+                }
+                if (filesLimit && noOfFiles >= filesLimit) break;
+            }
         }
-        if (filesLimit && noOfFiles >= filesLimit) break;
+
+        repo = { ...repo, noOfFiles }
+
+        if (firstOccuredYMLFilePath) {
+            const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir: firstOccuredYMLFilePath })
+            const firstYMLFileContent = Buffer.from(content, 'base64').toString('utf8')
+            repo['firstYMLFileContent'] = firstYMLFileContent;
+        } else {
+            repo['firstYMLFileContent'] = '';
+        }
+
+        repo['webhooks'] = webhooks;
+
+        console.timeEnd('pf')
+
+        return repo;
+    } catch (e) {
+        throw e;
     }
 
-    repo = { ...repo, noOfFiles }
-
-    if (firstOccuredYMLFilePath) {
-        const { content } = await dataSources.githubAPIResource.getContentOfDirectory({ repoName, dir: firstOccuredYMLFilePath })
-        const firstYMLFileContent = Buffer.from(content, 'base64').toString('utf8')
-        repo['firstYMLFileContent'] = firstYMLFileContent;
-    } else {
-        repo['firstYMLFileContent'] = '';
-    }
-    repo['webhooks'] = webhooks;
-
-    console.timeEnd('perf')
-
-    return repo;
 }
 
 const listRepos = async (_, { }, { dataSources }) => {
-    const repos = (await dataSources.githubAPIResource.listRepos())
-        .filter(repo => ["repoA", "repoB", "repoC"].includes(repo.name));
-    return repos
+    try {
+        const repos = (await dataSources.githubAPIResource.listRepos())
+            .filter(repo => ["repoA", "repoB", "repoC"].includes(repo.name));
+        return repos
+    } catch (e) {
+        throw e;
+    }
 }
 
 const resolvers = {

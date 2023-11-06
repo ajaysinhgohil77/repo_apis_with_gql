@@ -14,7 +14,7 @@ Install dependencies
   npm install
 ```
 
-Put Owner and Github Personal Access Token in ENV file
+Create .env file in the root directory and put Owner and Github Personal Access Token in ENV file as given below
 
 ```bash
   owner=<YOUR OWNER NAME>

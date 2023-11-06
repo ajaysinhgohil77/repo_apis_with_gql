@@ -18,7 +18,8 @@ class GithubAPIResource extends RESTDataSource {
             const response = await this.get('/user/repos', undefined, { headers });
             return response;
         } catch (e) {
-            console.error("err in listRepos API Call =>", e.message);
+            console.error("Error in listRepos API Call =>", e.message);
+            throw e;
         }
     }
 
@@ -27,7 +28,8 @@ class GithubAPIResource extends RESTDataSource {
             const response = await this.get(`/repos/${OWNER}/${repoName}`, undefined, { headers });
             return response;
         } catch (e) {
-            console.error("err in getRepoByName API Call =>", e.message);
+            console.error("Error in getRepoByName API Call =>", e.message);
+            throw e;
         }
     }
 
@@ -36,7 +38,8 @@ class GithubAPIResource extends RESTDataSource {
             const response = await this.get(`/repos/${OWNER}/${repoName}/contents`, undefined, { headers });
             return response;
         } catch (e) {
-            console.error("err in getContentOfRepo API Call =>", e.message);
+            console.error("Error in getContentOfRepo API Call =>", e.message);
+            throw e;
         }
     }
 
@@ -48,7 +51,8 @@ class GithubAPIResource extends RESTDataSource {
             const response = await this.get(`/repos/${OWNER}/${repoName}/contents/${dir}`, undefined, { headers });
             return response;
         } catch (e) {
-            console.error("err in getContentOfDirectory API Call =>", e.message);
+            console.error("Error in getContentOfDirectory API Call =>", e.message);
+            throw e;
         }
     }
 
@@ -57,7 +61,8 @@ class GithubAPIResource extends RESTDataSource {
             const response = await this.get(`/repos/${OWNER}/${repoName}/hooks`, undefined, { headers });
             return response;
         } catch (e) {
-            console.error("err in getContentOfRepo API Call =>", e.message);
+            console.error("Error in getContentOfRepo API Call =>", e.message);
+            throw e;
         }
     }
 }
